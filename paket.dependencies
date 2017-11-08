@@ -16,3 +16,13 @@ nuget Microsoft.AspNetCore.Authentication.Cookies
 nuget Microsoft.Extensions.DependencyInjection
 nuget Giraffe
 nuget Giraffe.Razor
+
+nuget Fable.JsonConverter
+nuget Fable.Core
+nuget Fable.Elmish.Browser
+nuget Fable.Elmish.Debugger
+nuget Fable.Elmish.React
+nuget Fable.Elmish.HMR
+
+clitool dotnet-fable
+clitool Microsoft.DotNet.Watcher.Tools
