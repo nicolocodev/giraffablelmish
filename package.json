@@ -1,4 +1,6 @@
 {
+    "name": "fableclient",
+    "version": "1.0.0",
     "private": true,
     "dependencies": {
       "babel-polyfill": "6.26.0",
