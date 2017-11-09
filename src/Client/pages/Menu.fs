@@ -28,4 +28,6 @@ let view (model:Model) dispatch =
           yield viewLink Page.Home "Home"
          
           yield viewLink Page.Counter "Counter" 
+
+          yield viewLink Page.Todo "Todo" 
         ]

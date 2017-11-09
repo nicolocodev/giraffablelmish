@@ -1,27 +1,29 @@
 module Client.App
 
 open Fable.Core
-open Fable.Core.JsInterop
+open JsInterop
 
 open Fable.Import
 open Elmish
 open Elmish.React
-open Fable.Import.Browser
 open Elmish.Browser.Navigation
 open Elmish.HMR
-open Client.Pages
+open Pages
 
-JsInterop.importSideEffects "whatwg-fetch"
-JsInterop.importSideEffects "babel-polyfill"
+importSideEffects "whatwg-fetch"
+importSideEffects "babel-polyfill"
 
 // Model
 
 type PageModel =
     | HomePageModel
     | CounterPageModel of Counter.Model
+    | TodoPageModel of Todo.Model
 
 type Msg =
+    | OpenTodo
     | OpenCounter
+    | TodoMsg of Todo.Messages
     | CounterMsg of Counter.Messages
     | MenuMsg of Menu.Msg
 
@@ -36,11 +38,16 @@ let urlUpdate (result:Page option) model =
         ( model, Navigation.modifyUrl (toHash Page.Home) )
 
     | Some Page.Counter ->
-        let m,cmd = Counter.init()
-        { model with PageModel = CounterPageModel m}, cmd
+        let m = Counter.init()
+        { model with PageModel = CounterPageModel m}, Cmd.none
+
+    | Some Page.Todo -> 
+        let m = Todo.init()
+        {model with PageModel = TodoPageModel m}, Cmd.none
 
     | Some Page.Home ->
         { model with PageModel = HomePageModel }, Cmd.none
+    
 
 let init result =
     let menu,menuCmd = Menu.init()
@@ -53,26 +60,37 @@ let init result =
 
 let update msg model =
     match msg, model.PageModel with
+
     | OpenCounter, _ ->
-        let m,cmd = Counter.init()
+        let m = Counter.init()
         { model with PageModel = CounterPageModel m}
-        , Cmd.batch [cmd; Navigation.newUrl (toHash Page.Counter) ]
+        , Navigation.newUrl (toHash Page.Counter)
+
     | CounterMsg msg, CounterPageModel cpm -> 
         let m = Counter.update msg cpm
         { model with PageModel = CounterPageModel m}, Cmd.none
-    |_, _ -> model,Cmd.none    
+
+    | OpenTodo, _ ->
+        let m = Todo.init()
+        { model with PageModel = TodoPageModel m}, Navigation.newUrl (toHash Page.Todo)
+
+    | TodoMsg msg, TodoPageModel tpm -> 
+        let m,c = Todo.update msg tpm
+        let cmd = Cmd.map TodoMsg c
+        { model with PageModel = TodoPageModel m}, cmd
+
+    | _, _ -> model,Cmd.none    
 // VIEW
 
 open Fable.Helpers.React
-open Fable.Helpers.React.Props
-open Client.Style
+open Style
 
 /// Constructs the view for a page given the model and dispatcher.
 let viewPage model dispatch =
     match model.PageModel with
     | HomePageModel -> Home.view ()
-    | CounterPageModel m ->
-        [ Counter.view m (fun msg -> dispatch(CounterMsg msg)) ] //(CounterMsg >> dispatch)
+    | CounterPageModel m -> [ Counter.view m (CounterMsg >> dispatch) ]
+    | TodoPageModel m -> [ Todo.view m (TodoMsg >> dispatch) ]
 
 /// Constructs the view for the application given the model.
 let view model dispatch =
@@ -82,7 +100,6 @@ let view model dispatch =
       div [ centerStyle "column" ] (viewPage model dispatch)
     ]
 
-open Elmish.React
 open Elmish.Debug
 
 // App

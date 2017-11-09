@@ -23,7 +23,7 @@ let update msg model =
 // Helper function, a string is a valid ReactElement
 let text (content: string) = unbox content
 // Helper function, for the initial model
-let init() = { Count = 0 }, Cmd.none
+let init() = { Count = 0 }
 
 let view model dispatch = 
     div 

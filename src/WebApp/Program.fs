@@ -2,7 +2,6 @@ module WebApp.App
 
 open System
 open System.IO
-open System.Collections.Generic
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Hosting
@@ -14,17 +13,35 @@ open Giraffe.Middleware
 open Giraffe.Razor.HttpHandlers
 open Giraffe.Razor.Middleware
 open WebApp.Models
+open Giraffe
 
 // ---------------------------------
 // Web app
 // ---------------------------------
 
+let bd = new System.Collections.Generic.Dictionary<Guid,string>();
+
+let submitTodo =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
+        task {
+            
+            let! todo = ctx.BindJson<Types.Todo>()
+
+            bd.Add(todo.Id,todo.Text)
+
+            return! json todo next ctx
+        }
+
 let webApp =
     choose [
         GET >=>
             choose [
-                route "/" >=> razorHtmlView "Index" { Text = "Hello world, from Giraffe!" }
+                route "/" >=> htmlFile "index.html"
             ]
+        POST >=> 
+            choose [
+                route "/todo" >=> submitTodo
+            ]        
         setStatusCode 404 >=> text "Not Found" ]
 
 // ---------------------------------
@@ -61,13 +78,14 @@ let configureLogging (builder : ILoggingBuilder) =
 
 [<EntryPoint>]
 let main argv =
-    let contentRoot = Directory.GetCurrentDirectory()
-    let webRoot     = Path.Combine(contentRoot, "WebRoot")
+    let currDir         = Directory.GetCurrentDirectory()
+    let contentRoot     = (Path.Combine(currDir, "..", "Client")).TrimEnd(Path.DirectorySeparatorChar) + (string Path.DirectorySeparatorChar)
+
     WebHostBuilder()
         .UseKestrel()
         .UseContentRoot(contentRoot)
         .UseIISIntegration()
-        .UseWebRoot(webRoot)
+        .UseWebRoot(contentRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .ConfigureLogging(configureLogging)
